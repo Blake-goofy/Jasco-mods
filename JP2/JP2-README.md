@@ -22,3 +22,6 @@ This is an example of the `GENERIC_CONFIG_DETAIL` maintenance screen where opera
 ### VAS criteria
 The `CUSTOMER_CATEGORY7` flag is used in VAS criteria to trigger parent/child label printing and any other value-added services required for those shipments.
 ![VAS criteria example](../images/JP2-VAS-criteria.png)
+
+### Installation note
+Make sure to add the history process `JP2_AllocationRequestModify`
