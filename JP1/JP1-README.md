@@ -2,10 +2,10 @@
 
 ## Overview
 Two new views have been added to this project:
-- `JPCI_METADATA_INSIGHT_DIF_INCOMING_MESSAGE`
-- `JPCI_METADATA_INSIGHT_DIF_OUTGOING_MESSAGE`
+- `JP1_METADATA_INSIGHT_DIF_INCOMING_MESSAGE`
+- `JP1_METADATA_INSIGHT_DIF_OUTGOING_MESSAGE`
 
-These views are based on the original DIF views, but with the prefix `JPCI_` added to their names.
+These views are based on the original DIF views, but with the prefix `JP1_` added to their names.
 
 ## New Columns
 Both new views include two additional columns:
@@ -18,7 +18,7 @@ Both new views include two additional columns:
 The following images show the screen before and after the customization (for DIF Incoming). The same changes were also applied to DIF Outgoing.
 
 ### Before Customization
-![Before Customization](../images/dif-in-before.png)
+![Before Customization](../images/JP1-dif-in-before.png)
 
 ### After Customization
-![After Customization](../images/dif-in-after.png)
+![After Customization](../images/JP1-dif-in-after.png)
