@@ -2,6 +2,8 @@
 
 This repository documents Jasco customizations that are implemented outside of the core Manhattan codebase. It exists to make each customization explicit, discoverable, and easy to evaluate during upgrades.
 
+For detailed explanations of each mod please visit the [wiki](https://github.com/Blake-goofy/Jasco-mods/wiki).
+
 Purpose:
 - Capture what was customized, why it exists, and where the implementation lives.
 - Help answer the questions: "Do we still need this customization?" and "What is related to this customization?"
