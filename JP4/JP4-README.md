@@ -23,7 +23,8 @@ The new view includes four additional columns:
 
 ### PREVENT_RELEASE
 - **Source**: An indicator that determines whether the wave is safe to release based on inventory availability at allocated locations (currently set to `N` as placeholder for future development).
-- **Business purpose**: When set to `Y`, this flag greys out the Release button in the UI after a wave has been run but before sufficient on-hand inventory exists at the locations being allocated. This prevents overselling when multiple waves compete for the same inventory. For example:
+- **Business purpose**: When set to `Y`, this flag greys out the Release button in the UI after a wave has been run but before sufficient on-hand inventory exists at the locations being allocated. This prevents situations where users go to a pick location and the inventory they are instructed to pick is not yet physically there.
+- Note that releasing a wave could cause another wave to prevent release, for example:
   - Location A has 100 on hand
   - Wave 1 allocates 100 from Location A (PREVENT_RELEASE = `N`)
   - Wave 2 allocates 100 from Location A (PREVENT_RELEASE = `N`)
