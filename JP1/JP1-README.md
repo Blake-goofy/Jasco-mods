@@ -1,9 +1,7 @@
-# JP1 Custom Views Update
-
 ## Overview
-Two new views have been added to this project:
-- `JP1_METADATA_INSIGHT_DIF_INCOMING_MESSAGE`
-- `JP1_METADATA_INSIGHT_DIF_OUTGOING_MESSAGE`
+Two new views have were added for this mod:
+- [`JP1_METADATA_INSIGHT_DIF_INCOMING_MESSAGE`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP1/JP1_METADATA_INSIGHT_DIF_INCOMING_MESSAGE.sql)
+- [`JP1_METADATA_INSIGHT_DIF_OUTGOING_MESSAGE`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP1/JP1_METADATA_INSIGHT_DIF_OUTGOING_MESSAGE.sql)
 
 These views are based on the original DIF views, but with the prefix `JP1_` added to their names.
 
@@ -18,7 +16,7 @@ Both new views include two additional columns:
 The following images show the screen before and after the customization (for DIF Incoming). The same changes were also applied to DIF Outgoing.
 
 ### Before Customization
-![Before Customization](../images/JP1-dif-in-before.png)
+![Before Customization](https://raw.githubusercontent.com/Blake-goofy/Jasco-mods/main/images/JP1-dif-in-before.png)
 
 ### After Customization
-![After Customization](../images/JP1-dif-in-after.png)
+![After Customization](https://raw.githubusercontent.com/Blake-goofy/Jasco-mods/main/images/JP1-dif-in-after.png)
