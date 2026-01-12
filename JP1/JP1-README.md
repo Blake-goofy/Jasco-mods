@@ -7,10 +7,14 @@ These views are based on the original DIF views, but with the prefix `JP1_` adde
 
 ## New Columns
 Both new views include two additional columns:
-- **MESSAGE_TYPE**: Extracted from the JSON in the `DATA` column.
-	- *Business purpose*: This allows team members to quickly filter for the specific message types they are interested in when investigating issues. The team is familiar with message type, and it is preferred over alternatives like event ID or event description for filtering and troubleshooting.
-- **ROW**: Used for the toggle switch in the UI to allow displaying only the latest 100 messages ("Top 100" filter).
-	- *Business purpose*: The Top 100 filter makes it easy to check if messages are being received and processed. Since SCALE limits results to 5000 rows, it can be difficult to see the latest messages when there is a high volume. The Top 100 filter simplifies this process, allowing users to quickly confirm recent message activity without additional manual filtering.
+
+### MESSAGE_TYPE
+- **Source**: Extracted from the JSON in the `DATA` column.
+- **Business purpose**: Team members often look for specific message types when investigating issues, so exposing that value lets them filter with a familiar attribute instead of relying on event IDs or descriptions.
+
+### ROW
+- **Source**: A computed row number added to every result so downstream filters can identify the newest messages.
+- **Business purpose**: SCALE limits query results to 5000 rows, which can make it hard to see the most recent activity. The Row column supports the UI toggle so users instantly focus on the latest 100 messages without manual filtering.
 
 ## Visual Changes
 The following images show the screen before and after the customization (for DIF Incoming). The same changes were also applied to DIF Outgoing.
