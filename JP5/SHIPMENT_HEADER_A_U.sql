@@ -1,0 +1,218 @@
+USE [JPCISCALEQA2025]
+GO
+
+/****** Object:  Trigger [dbo].[SHIPMENT_HEADER_A_U]    Script Date: 1/13/2026 6:30:59 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+/*
+ Task    | By				| Date		 | Modification Description
+ -------------------------------------------------------------------------------
+ JP5     | Brian Cunningham	| 07/19/2024 | Created.
+ JP5     | Blake Becker		| 09/19/2024 | Opened up to any change from 3rd party
+ JP6     | Blake Becker		| 09/24/2024 | Logging any carrier change
+ JP6     | Blake Becker		| 11/18/2024 | Logging any carrier service change
+ JP5     | Blake Becker		| 01/17/2024 | Logging any freight term change
+ JP7     | Blake Becker		| 07/30/2025 | Sending confirmation email when we stage the entire shipment
+*/
+
+/*
+ NOTES
+ -------------------------------------------------------------------------------
+ Brian helped me (Blake Becker) write this trigger which should take care of the accessorials when we change from 3rd
+*/
+
+ALTER TRIGGER [dbo].[SHIPMENT_HEADER_A_U]
+ON [dbo].[SHIPMENT_HEADER]
+AFTER UPDATE
+AS
+
+SET NOCOUNT ON;
+
+-- JP5 START
+DECLARE @THIRD_PARTY TABLE (
+	INTERNAL_SHIPMENT_NUM NUMERIC(9,0)
+	,SHIPMENT_ID NVARCHAR (25)
+	,USER_STAMP NVARCHAR (30)
+	,WAREHOUSE NVARCHAR (25)
+	,NEW_TERMS NVARCHAR (50)-- Blake Becker 09/19/2024
+	);
+DECLARE @FREIGHT_MSG NVARCHAR(MAX) = N'.'
+
+-- Check if FREIGHT_TERMS field is updated
+IF UPDATE(FREIGHT_TERMS)
+BEGIN
+	INSERT @THIRD_PARTY
+	SELECT 
+		I.INTERNAL_SHIPMENT_NUM, I.SHIPMENT_ID, I.USER_STAMP, I.WAREHOUSE, NEW_TERMS = GCD.DESCRIPTION
+	FROM INSERTED I 
+	INNER JOIN DELETED D 
+		ON I.INTERNAL_SHIPMENT_NUM = D.INTERNAL_SHIPMENT_NUM
+	LEFT JOIN GENERIC_CONFIG_DETAIL GCD WITH (NOLOCK)
+		ON GCD.RECORD_TYPE = 'FR TERMS' AND GCD.IDENTIFIER = I.FREIGHT_TERMS -- Blake Becker 09/19/2024
+	WHERE 
+		D.FREIGHT_TERMS = N'3RD' -- Only select if FREIGHT_TERMS changed from 3rd
+
+	-- Delete 3rd party accessorials related to the shipment
+	DELETE SA
+	FROM SHIPMENT_ACCESSORIALS AS SA WITH (NOLOCK)
+	INNER JOIN @THIRD_PARTY AS T
+		ON SA.INTERNAL_SHIPMENT_NUM = T.INTERNAL_SHIPMENT_NUM
+	WHERE 
+		SA.ACCESSORIAL_CODE = N'3rd Pty Billing'
+		AND T.INTERNAL_SHIPMENT_NUM IS NOT NULL;
+		
+	-- Delete 3rd party accessorials related to the containers
+	DELETE SA
+	FROM @THIRD_PARTY AS T -- Start by only looking at the shipments that were updated
+	INNER JOIN SHIPPING_CONTAINER SC WITH (NOLOCK)
+		ON SC.INTERNAL_SHIPMENT_NUM = T.INTERNAL_SHIPMENT_NUM -- look at the containers related to those shipments
+	INNER JOIN SHIPMENT_ACCESSORIALS AS SA WITH (NOLOCK)
+		ON SA.INTERNAL_NUM = SC.INTERNAL_CONTAINER_NUM -- look at the SHIPMENT_ACCESSORIALS related to those containers
+	WHERE 
+		SA.ACCESSORIAL_CODE = N'3rd Pty Billing' -- filter down to the SHIPMENT_ACCESSORIALS that are 3rd Pty Billing
+
+	IF EXISTS (SELECT * FROM @THIRD_PARTY)
+	BEGIN
+		SET @FREIGHT_MSG = N', so the 3rd pty accessorials were deleted.'
+	END
+
+	INSERT INTO PROCESS_HISTORY
+		(
+			WAREHOUSE,
+			PROCESS,
+			ACTION,
+			ACTIVITY_DATE_TIME, 
+			IDENTIFIER1, 
+			IDENTIFIER2, 
+			IDENTIFIER3, 
+			IDENTIFIER4, 
+			MESSAGE, 
+			USER_STAMP,
+			PROCESS_STAMP,
+			DATE_TIME_STAMP
+		)
+	SELECT 
+		I.WAREHOUSE,
+		N'Value changed', -- Made more generic Blake Becker 09/19/2024
+		N'150', -- Information
+		GETUTCDATE(),
+		I.SHIPMENT_ID,
+		N'Freight terms changed',
+		D.CARRIER_SERVICE,
+		D.FREIGHT_TERMS,
+		I.SHIPMENT_ID + N' freight terms were changed from ' + ISNULL(DGCD.DESCRIPTION, N'NULL') + N' to ' + ISNULL(IGCD.DESCRIPTION, N'NULL') + @FREIGHT_MSG, -- Added shipmentID and new terms Blake Becker 09/19/2024
+		I.USER_STAMP,
+		N'SHIPMENT_HEADER_A_U Trigger',
+		GETUTCDATE()
+	FROM inserted I
+		INNER JOIN deleted D ON D.INTERNAL_SHIPMENT_NUM = I.INTERNAL_SHIPMENT_NUM
+		LEFT JOIN GENERIC_CONFIG_DETAIL IGCD WITH (NOLOCK) ON IGCD.RECORD_TYPE = N'FR TERMS' AND IGCD.IDENTIFIER = I.FREIGHT_TERMS
+		LEFT JOIN GENERIC_CONFIG_DETAIL DGCD WITH (NOLOCK) ON DGCD.RECORD_TYPE = N'FR TERMS' AND DGCD.IDENTIFIER = D.FREIGHT_TERMS
+	WHERE ISNULL(I.FREIGHT_TERMS, N'N') != ISNULL(D.FREIGHT_TERMS, N'N')
+END
+-- JP5 END
+
+-- JP6 START
+-- Check if CARRIER field is updated
+IF UPDATE(CARRIER) -- Blake Becker 09/24/2024
+BEGIN
+		INSERT INTO PROCESS_HISTORY
+		(
+			WAREHOUSE,
+			PROCESS,
+			ACTION,
+			ACTIVITY_DATE_TIME, 
+			IDENTIFIER1, 
+			IDENTIFIER2, 
+			IDENTIFIER3, 
+			IDENTIFIER4, 
+			MESSAGE, 
+			USER_STAMP,
+			PROCESS_STAMP,
+			DATE_TIME_STAMP
+		)
+	SELECT 
+		I.WAREHOUSE,
+		N'Value changed',
+		N'150', -- Information
+		GETUTCDATE(),
+		I.SHIPMENT_ID,
+		N'Carrier changed',
+		D.CARRIER_SERVICE,
+		D.FREIGHT_TERMS,
+		I.SHIPMENT_ID + N' carrier was changed from ' + ISNULL(D.CARRIER, N'NULL') + N' to ' + ISNULL(I.CARRIER, N'NULL') + N'.',
+		I.USER_STAMP,
+		N'SHIPMENT_HEADER_A_U Trigger',
+		GETUTCDATE()
+	FROM INSERTED I
+		INNER JOIN DELETED D ON I.INTERNAL_SHIPMENT_NUM = D.INTERNAL_SHIPMENT_NUM
+	WHERE ISNULL(I.CARRIER, N'N') != ISNULL(D.CARRIER, N'N')
+END -- Blake Becker 09/24/2024
+
+-- Check if CARRIER_SERVICE field is updated
+IF UPDATE(CARRIER_SERVICE) -- Blake Becker 11/18/2024
+BEGIN
+		INSERT INTO PROCESS_HISTORY
+		(
+			WAREHOUSE,
+			PROCESS,
+			ACTION,
+			ACTIVITY_DATE_TIME, 
+			IDENTIFIER1, 
+			IDENTIFIER2, 
+			IDENTIFIER3, 
+			IDENTIFIER4, 
+			MESSAGE, 
+			USER_STAMP,
+			PROCESS_STAMP,
+			DATE_TIME_STAMP
+		)
+	SELECT 
+		I.WAREHOUSE,
+		N'Value changed',
+		N'150', -- Information
+		GETUTCDATE(),
+		I.SHIPMENT_ID,
+		N'Carrier service changed',
+		D.CARRIER_SERVICE,
+		D.FREIGHT_TERMS,
+		I.SHIPMENT_ID + N' carrier service was changed from ' + ISNULL(D.CARRIER_SERVICE, N'NULL') + N' to ' + ISNULL(I.CARRIER_SERVICE, N'NULL') + N'.',
+		I.USER_STAMP,
+		N'SHIPMENT_HEADER_A_U Trigger',
+		GETUTCDATE()
+	FROM INSERTED I
+	INNER JOIN DELETED D
+		ON I.INTERNAL_SHIPMENT_NUM = D.INTERNAL_SHIPMENT_NUM
+	WHERE ISNULL(I.CARRIER_SERVICE, N'N') != ISNULL(D.CARRIER_SERVICE, N'N')
+END -- Blake Becker 11/18/2024
+-- JP6 END
+
+-- JP7 START
+-- Check if TRAILING_STS field is updated
+IF UPDATE(TRAILING_STS)
+BEGIN
+    IF EXISTS ( -- Check if the old trailing sts is < loading pending and new sts is between loading pending and closed (inclusive)
+        SELECT 1 FROM INSERTED I
+        INNER JOIN DELETED D ON I.INTERNAL_SHIPMENT_NUM = D.INTERNAL_SHIPMENT_NUM
+        WHERE D.TRAILING_STS < 650 AND I.TRAILING_STS BETWEEN 650 AND 900
+    )
+	BEGIN
+		DECLARE @INTERNAL_SHIPMENT_NUM NUMERIC (9,0) = (SELECT INTERNAL_SHIPMENT_NUM FROM INSERTED)
+		DECLARE @EMAIL NVARCHAR(MAX)
+		DECLARE @CARRIER NVARCHAR(MAX)
+
+		SELECT @EMAIL = SHIP_TO_EMAIL_ADDRESS, @CARRIER = CARRIER FROM INSERTED
+
+		IF (@EMAIL LIKE N'%byjasco.com%' AND @CARRIER IN (N'SAMP', N'P/U', N'BYJC')) -- Only send email if going to a byjasco address
+		BEGIN
+			EXEC usp_JPCI_OrderReadyEmail @INTERNAL_SHIPMENT_NUM
+		END
+	END
+END
+-- JP7 END
+GO
