@@ -17,6 +17,8 @@ For detailed explanations of each mod please visit the [wiki](https://github.com
 - **JP6** - [Carrier change](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP6%20Carrier%20change.md) - Logging for carrier and carrier service changes
 - **JP7** - [Order ready email](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP7%20Order%20ready%20email.md) - Automated pickup notifications for internal orders
 - **JP8** - [Minimum weight staging redirect](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP8%20Minimum%20weight%20staging%20redirect.md) - Dynamic staging location routing for lightweight pallets
+- **JP9** - [Receipt QC](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP9%20Receipt%20QC.md) - Automated QC assignment for receipt lines
+- **JP10** - [Last pallet hold](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP10%20Last%20pallet%20hold.md) - Automatic hold on final receipt container for count verification
 
 ## Repository Structure
 
