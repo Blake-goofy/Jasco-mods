@@ -9,16 +9,16 @@ For detailed explanations of each mod please visit the [wiki](https://github.com
 - Help answer the questions: "Do we still need this customization?" and "What is related to this customization?"
 
 ## Available Mods
-- **JP1** - [DIF insight](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP1%20DIF%20insight.md) - Enhanced DIF message views with message type filtering
-- **JP2** - [Case label customers ODWS](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP2%20Case%20label%20customers%20ODWS.md) - Automated case label generation for specific customers
-- **JP3** - [UD1 preserve](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP3%20UD1%20preserve.md) - Preserve USER_DEF1 values during inventory operations
-- **JP4** - [Wave insight](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP4%20Wave%20insight.md) - Enhanced wave view with container estimates and validation flags
-- **JP5** - [Freight terms change](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP5%20Freight%20terms%20change.md) - Automatic cleanup of third-party accessorials
-- **JP6** - [Carrier change](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP6%20Carrier%20change.md) - Logging for carrier and carrier service changes
-- **JP7** - [Order ready email](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP7%20Order%20ready%20email.md) - Automated pickup notifications for internal orders
-- **JP8** - [Minimum weight staging redirect](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP8%20Minimum%20weight%20staging%20redirect.md) - Dynamic staging location routing for lightweight pallets
-- **JP9** - [Receipt QC](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP9%20Receipt%20QC.md) - Automated QC assignment for receipt lines
-- **JP10** - [Last pallet hold](https://github.com/Blake-goofy/Jasco-mods/blob/main/wiki/JP10%20Last%20pallet%20hold.md) - Automatic hold on final receipt container for count verification
+- **JP1** - [DIF insight](https://github.com/Blake-goofy/Jasco-mods/wiki/JP1-DIF-insight) - Enhanced DIF message views with message type filtering
+- **JP2** - [Case label customers ODWS](https://github.com/Blake-goofy/Jasco-mods/wiki/JP2-Case-label-customers-ODWS) - Automated case label generation for specific customers
+- **JP3** - [UD1 preserve](https://github.com/Blake-goofy/Jasco-mods/wiki/JP3-UD1-preserve) - Preserve USER_DEF1 values during inventory operations
+- **JP4** - [Wave insight](https://github.com/Blake-goofy/Jasco-mods/wiki/JP4-Wave-insight) - Enhanced wave view with container estimates and validation flags
+- **JP5** - [Freight terms change](https://github.com/Blake-goofy/Jasco-mods/wiki/JP5-Freight-terms-change) - Automatic cleanup of third-party accessorials
+- **JP6** - [Carrier change](https://github.com/Blake-goofy/Jasco-mods/wiki/JP6-Carrier-change) - Logging for carrier and carrier service changes
+- **JP7** - [Order ready email](https://github.com/Blake-goofy/Jasco-mods/wiki/JP7-Order-ready-email) - Automated pickup notifications for internal orders
+- **JP8** - [Minimum weight staging redirect](https://github.com/Blake-goofy/Jasco-mods/wiki/JP8-Minimum-weight-staging-redirect) - Dynamic staging location routing for lightweight pallets
+- **JP9** - [Receipt QC](https://github.com/Blake-goofy/Jasco-mods/wiki/JP9-Receipt-QC) - Automated QC assignment for receipt lines
+- **JP10** - [Last receipt pallet hold](https://github.com/Blake-goofy/Jasco-mods/wiki/JP10-Last-receipt-pallet-hold) - Automatic hold on final receipt container for count verification
 
 ## Repository Structure
 
