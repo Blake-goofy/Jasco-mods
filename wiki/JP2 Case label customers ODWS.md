@@ -1,6 +1,6 @@
 ## Overview
 One new stored procedure has been added for this mod:
-- [`JP2_ODWS_AllocationRequestModify`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP2/JP2_ODWS_AllocationRequestModify.sql)
+- [`JP2_ODWS_AllocationRequestModify`](https://github.com/Blake-goofy/Jasco-mods/blob/main/db-objects/stored-procedures/JP2_ODWS_AllocationRequestModify.sql)
 
 This mod provides an Override Data Wave Step (ODWS) that drives case-label behavior for a controlled list of customers. It uses a generic configuration list (stored in `GENERIC_CONFIG_DETAIL`) to identify customers that require case labels, and then the ODWS stored procedure performs two actions:
 

@@ -1,8 +1,8 @@
 
 ## Overview
 Two stored procedures have been modified for this mod:
-- [`EXP_CloseContainerAfter`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP8/EXP_CloseContainerAfter.sql)
-- [`EXP_WorkCreationBefore`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP8/EXP_WorkCreationBefore.sql)
+- [`EXP_CloseContainerAfter`](https://github.com/Blake-goofy/Jasco-mods/blob/main/db-objects/stored-procedures/EXP_CloseContainerAfter.sql)
+- [`EXP_WorkCreationBefore`](https://github.com/Blake-goofy/Jasco-mods/blob/main/db-objects/stored-procedures/EXP_WorkCreationBefore.sql)
 
 This mod temporarily removes dock area anchor criteria from Pallet Flow locations when lightweight pallets are closed, then restores the criteria during work creation. This prevents lightweight pallets from being routed to Pallet Flow staging areas and instead directs them to standard staging locations.
 

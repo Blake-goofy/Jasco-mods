@@ -1,6 +1,6 @@
 ## Overview
 A trigger modification was added for this mod:
-- [`SHIPMENT_HEADER_A_U`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP5/SHIPMENT_HEADER_A_U.sql)
+- [`SHIPMENT_HEADER_A_U`](https://github.com/Blake-goofy/Jasco-mods/blob/main/db-objects/triggers/SHIPMENT_HEADER_A_U.sql)
 
 This is the same trigger file modified in JP5. JP6 adds logging functionality to track changes to the `CARRIER` and `CARRIER_SERVICE` fields in the `SHIPMENT_HEADER` table.
 

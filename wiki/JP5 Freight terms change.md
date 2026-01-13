@@ -1,6 +1,6 @@
 ## Overview
 A trigger modification was added for this mod:
-- [`SHIPMENT_HEADER_A_U`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP5/SHIPMENT_HEADER_A_U.sql)
+- [`SHIPMENT_HEADER_A_U`](https://github.com/Blake-goofy/Jasco-mods/blob/main/db-objects/triggers/SHIPMENT_HEADER_A_U.sql)
 
 This trigger monitors changes to the `FREIGHT_TERMS` field in the `SHIPMENT_HEADER` table and automatically cleans up third-party billing accessorials when freight terms change away from third-party.
 

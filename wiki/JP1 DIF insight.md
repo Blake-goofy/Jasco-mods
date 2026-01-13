@@ -1,7 +1,7 @@
 ## Overview
 Two new views have were added for this mod:
-- [`JP1_METADATA_INSIGHT_DIF_INCOMING_MESSAGE`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP1/JP1_METADATA_INSIGHT_DIF_INCOMING_MESSAGE.sql)
-- [`JP1_METADATA_INSIGHT_DIF_OUTGOING_MESSAGE`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP1/JP1_METADATA_INSIGHT_DIF_OUTGOING_MESSAGE.sql)
+- [`JP1_METADATA_INSIGHT_DIF_INCOMING_MESSAGE`](https://github.com/Blake-goofy/Jasco-mods/blob/main/db-objects/views/JP1_METADATA_INSIGHT_DIF_INCOMING_MESSAGE.sql)
+- [`JP1_METADATA_INSIGHT_DIF_OUTGOING_MESSAGE`](https://github.com/Blake-goofy/Jasco-mods/blob/main/db-objects/views/JP1_METADATA_INSIGHT_DIF_OUTGOING_MESSAGE.sql)
 
 These views are based on the original DIF views, but with the prefix `JP1_` added to their names.
 

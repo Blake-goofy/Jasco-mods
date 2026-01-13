@@ -1,6 +1,6 @@
 ## Overview
 One new view has been added for this mod:
-- [`JP4_METADATA_INSIGHT_WAVE_VIEW`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP4/JP4_METADATA_INSIGHT_WAVE_VIEW.sql)
+- [`JP4_METADATA_INSIGHT_WAVE_VIEW`](https://github.com/Blake-goofy/Jasco-mods/blob/main/db-objects/views/JP4_METADATA_INSIGHT_WAVE_VIEW.sql)
 
 This view is based on the original wave view, but with the prefix `JP4_` added to its name.
 

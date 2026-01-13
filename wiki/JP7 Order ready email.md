@@ -1,7 +1,7 @@
 ## Overview
 Two database objects were added for this mod:
-- [`SHIPMENT_HEADER_A_U`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP5/SHIPMENT_HEADER_A_U.sql) (trigger)
-- [`usp_JPCI_OrderReadyEmail`](https://github.com/Blake-goofy/Jasco-mods/blob/main/JP7/usp_JPCI_OrderReadyEmail.sql) (stored procedure)
+- [`SHIPMENT_HEADER_A_U`](https://github.com/Blake-goofy/Jasco-mods/blob/main/db-objects/triggers/SHIPMENT_HEADER_A_U.sql) (trigger)
+- [`usp_JPCI_OrderReadyEmail`](https://github.com/Blake-goofy/Jasco-mods/blob/main/db-objects/stored-procedures/usp_JPCI_OrderReadyEmail.sql) (stored procedure)
 
 This is the same trigger file modified in JP5 and JP6. JP7 adds functionality to automatically send confirmation emails to internal employees when their orders are ready for pickup.
 
