@@ -51,3 +51,7 @@ The stored procedure logs each email sent to the `PROCESS_HISTORY` table:
 - **USER_STAMP**: "ILSSRV" (system user)
 
 This provides an audit trail of all confirmation emails sent to employees.
+
+## Visual
+### Email example
+![Email example](https://raw.githubusercontent.com/Blake-goofy/Jasco-mods/main/images/JP7-email.png)
