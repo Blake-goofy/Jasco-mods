@@ -124,3 +124,4 @@ The mod creates comprehensive audit trails:
 ## Installation notes
 - Configure the technical value `JP9_QC_NEW_QTY` in `SYSTEM_CONFIG_DETAIL` (recommended value: 2)
 - The Receipt Overview SSRS report must be configured to call `JP9_RPT_ReceiptOverviewHeader` and `JP9_RPT_ReceiptOverviewDetails`
+- The section referencing the archive database is commented out in `JP9_AddReceiptQC`
