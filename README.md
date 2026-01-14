@@ -20,6 +20,7 @@ For detailed explanations of each mod please visit the [wiki](https://github.com
 - **JP9** - [Receipt QC](https://github.com/Blake-goofy/Jasco-mods/wiki/JP9-Receipt-QC) - Automated QC assignment for receipt lines
 - **JP10** - [Last receipt pallet hold](https://github.com/Blake-goofy/Jasco-mods/wiki/JP10-Last-receipt-pallet-hold) - Automatic hold on final receipt container for count verification
 - **JP11** - [ASRS inventory recall](https://github.com/Blake-goofy/Jasco-mods/wiki/JP11-ASRS-inventory-recall) - Inventory transfer from ASRS to recall location via TGW integration
+- **JP12** - [Velocity assignment](https://github.com/Blake-goofy/Jasco-mods/wiki/JP12-Velocity-assignment) - Automated velocity classification with smart capacity management to evenly distribute items across warehouse zones
 
 ## Repository Structure
 
