@@ -19,6 +19,7 @@ For detailed explanations of each mod please visit the [wiki](https://github.com
 - **JP8** - [Minimum weight staging redirect](https://github.com/Blake-goofy/Jasco-mods/wiki/JP8-Minimum-weight-staging-redirect) - Dynamic staging location routing for lightweight pallets
 - **JP9** - [Receipt QC](https://github.com/Blake-goofy/Jasco-mods/wiki/JP9-Receipt-QC) - Automated QC assignment for receipt lines
 - **JP10** - [Last receipt pallet hold](https://github.com/Blake-goofy/Jasco-mods/wiki/JP10-Last-receipt-pallet-hold) - Automatic hold on final receipt container for count verification
+- **JP11** - [ASRS inventory recall](https://github.com/Blake-goofy/Jasco-mods/wiki/JP11-ASRS-inventory-recall) - Inventory transfer from ASRS to recall location via TGW integration
 
 ## Repository Structure
 

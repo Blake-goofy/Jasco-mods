@@ -1,0 +1,555 @@
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+/*
+ Mod     | Programmer    | Date       | Modification Description
+ --------------------------------------------------------------------
+ JP11    | Nash Kibler   | 05/29/2025 | Created.
+*/
+
+CREATE OR ALTER PROC JP11_InventoryRecallAsrs 
+	@iMsgId INT
+	,@USER NVARCHAR(50) 
+	,@GTIN NVARCHAR(50) 
+	,@QTY_CHANGED NUMERIC(9,0)
+ AS 
+
+--Declaring local Variables
+DECLARE @TO_LOC AS NVARCHAR (250) = (SELECT SYSTEM_VALUE FROM SYSTEM_CONFIG_DETAIL WHERE RECORD_TYPE = N'Technical' AND SYS_KEY = N'JP11_RECALL_LOC');
+DECLARE @QUANTITY_UM NVARCHAR(12)
+DECLARE @FROM_LOC_NUM numeric(9, 0)
+DECLARE @ITEM NVARCHAR(50)
+DECLARE @AV_QTY numeric(19, 5)
+DECLARE @INV_STS nvarchar(50)
+DECLARE @PROCESS_HIST numeric(9, 0)
+--Declaring the Variables for Process History                   
+DECLARE @stProcess NVARCHAR(50)
+		,@stAction NVARCHAR(50)
+		,@stIdentifier1 NVARCHAR(200)
+		,@stIdentifier2 NVARCHAR(200)
+		,@stIdentifier3 NVARCHAR(200)
+		,@stIdentifier4 NVARCHAR(200)
+		,@stMessage NVARCHAR(500)
+		,@stProcessStamp NVARCHAR(100)
+		,@stUserName NVARCHAR(30)
+		,@stWarehouse NVARCHAR(25)
+		,@cProcHistActive NVARCHAR(2) = N'Y'; -- future use
+
+DECLARE @LOC_INV TABLE( 
+INTERNAL_LOCATION_INV numeric(9, 0)
+,ITEM nvarchar(50)
+,LOCATION nvarchar(25)
+,USER_DEF2 nvarchar(25)
+,USER_DEF4 nvarchar(25)
+,LOCATION_TEMPLATE nvarchar(25) 
+,TEMPLATE_FIELD1 nvarchar(25) 
+,TEMPLATE_FIELD2 nvarchar(25) 
+,TEMPLATE_FIELD3 nvarchar(25) 
+,TEMPLATE_FIELD4 nvarchar(25) 
+,TEMPLATE_FIELD5 nvarchar(25) 
+,INVENTORY_STS nvarchar(50)
+,ON_HAND_QTY numeric(19, 5)
+,ALLOCATED_QTY numeric(19, 5) 
+,SUSPENSE_QTY numeric(19, 5)
+,LOGISTICS_UNIT nvarchar(50)
+)
+
+DECLARE @X_REF TABLE(
+ITEM nvarchar(50) 
+,X_REF_ITEM nvarchar(25) 
+,COMPANY nvarchar(25) 
+,USER_DEF1 nvarchar(25) 
+,USER_DEF2 nvarchar(25) 
+,USER_DEF3 nvarchar(25) 
+,USER_DEF4 nvarchar(25) 
+,QUANTITY_UM nvarchar(25) 
+)
+
+
+INSERT INTO @X_REF (ITEM ,X_REF_ITEM ,COMPANY ,USER_DEF2 ,USER_DEF4 ,QUANTITY_UM)
+SELECT ITEM ,X_REF_ITEM ,COMPANY ,USER_DEF2 ,USER_DEF4 ,QUANTITY_UM 
+FROM ITEM_CROSS_REFERENCE I
+WHERE X_REF_ITEM = @GTIN AND ITEM IN (SELECT ITEM FROM LOCATION_INVENTORY LI WHERE LI.ITEM = I.ITEM AND LI.TEMPLATE_FIELD1 = N'ASRS' AND LI.TEMPLATE_FIELD2 = I.QUANTITY_UM)
+
+
+SET @QTY_CHANGED = replace(@QTY_CHANGED, N'-', N'')
+SELECT
+@ITEM = ITEM
+,@QUANTITY_UM = QUANTITY_UM
+FROM @X_REF 
+
+SELECT TOP 1
+@QTY_CHANGED = UOM.CONVERSION_QTY * @QTY_CHANGED
+FROM
+ITEM_UNIT_OF_MEASURE UOM
+WHERE
+UOM.ITEM = @ITEM
+AND UOM.QUANTITY_UM = @QUANTITY_UM
+
+
+IF (SELECT COUNT(X_REF_ITEM) FROM @X_REF) > 1
+BEGIN 
+	SET @stProcess = N'TGW_InventoryAdj'
+	SET @stAction = N'130' -- Execution Error
+	SET @stIdentifier1 = CONCAT(N'User: ',@USER)
+	SET @stIdentifier2 = CONCAT(N'iMsgId: ',@iMsgId)
+	SET @stIdentifier3 = CONCAT(N'Gtin: ',@GTIN)
+	SET @stMessage =  N'Multiple from locations returned'
+	SET @stProcessStamp = N'JP11_InventoryRecallAsrs'
+	SET @stUserName = N'ILSSRV'
+
+	EXEC HIST_SaveProcHist @stProcess
+	,@stAction
+	,@stIdentifier1
+	,@stIdentifier2
+	,@stIdentifier3
+	,@stIdentifier4
+	,@stMessage
+	,@stProcessStamp
+	,@stUserName
+	,@stWarehouse
+	,@cProcHistActive
+
+	SELECT N'No' AS N'Valid'
+	,N'Multiple from locations returned' AS N'ErrorMsg'
+	,N'N' AS N'InvokeAPI'
+	,N'N' AS N'LogAudit'
+
+	RETURN
+END
+
+IF @ITEM IS NULL
+BEGIN 
+	SET @stProcess = N'TGW_InventoryAdj'
+	SET @stAction = N'130' -- Execution Error
+	SET @stIdentifier1 = CONCAT(N'User: ',@USER)
+	SET @stIdentifier2 = CONCAT(N'iMsgId: ',@iMsgId)
+	SET @stIdentifier3 = CONCAT(N'Gtin: ',@GTIN)
+	SET @stMessage =  N'No from location found'
+	SET @stProcessStamp = N'JP11_InventoryRecallAsrs'
+	SET @stUserName = N'ILSSRV'
+
+	EXEC HIST_SaveProcHist @stProcess
+	,@stAction
+	,@stIdentifier1
+	,@stIdentifier2
+	,@stIdentifier3
+	,@stIdentifier4
+	,@stMessage
+	,@stProcessStamp
+	,@stUserName
+	,@stWarehouse
+	,@cProcHistActive
+
+	SELECT N'No' AS N'Valid'
+	,N'No from location found' AS N'ErrorMsg'
+	,N'N' AS N'InvokeAPI'
+	,N'N' AS N'LogAudit'
+
+	RETURN
+END
+
+INSERT INTO @LOC_INV (INTERNAL_LOCATION_INV ,ITEM ,LOCATION ,USER_DEF2 ,USER_DEF4 ,LOCATION_TEMPLATE ,TEMPLATE_FIELD1 ,TEMPLATE_FIELD2 ,TEMPLATE_FIELD3 ,TEMPLATE_FIELD4,TEMPLATE_FIELD5 
+,INVENTORY_STS ,ON_HAND_QTY ,ALLOCATED_QTY ,SUSPENSE_QTY)
+
+SELECT INTERNAL_LOCATION_INV ,ITEM ,LOCATION ,USER_DEF2 ,USER_DEF4 ,LOCATION_TEMPLATE ,TEMPLATE_FIELD1 ,TEMPLATE_FIELD2 ,TEMPLATE_FIELD3 ,TEMPLATE_FIELD4,TEMPLATE_FIELD5
+,INVENTORY_STS ,ON_HAND_QTY ,ALLOCATED_QTY ,SUSPENSE_QTY
+FROM LOCATION_INVENTORY 
+WHERE ITEM = @ITEM
+AND TEMPLATE_FIELD1 = N'ASRS'
+AND TEMPLATE_FIELD2 = @QUANTITY_UM
+
+
+IF (SELECT COUNT(INTERNAL_LOCATION_INV) FROM @LOC_INV) > 1 
+BEGIN
+	SET @stProcess = N'TGW_InventoryAdj'
+	SET @stAction = N'130' -- Execution Error
+	SET @stIdentifier1 = CONCAT(N'Item:',@item)
+	SET @stIdentifier2 = CONCAT(N'iMsgId: ',@iMsgId)
+	SET @stIdentifier3 = CONCAT(N'Gtin: ',@GTIN)
+	SET @stMessage = N'Multiple from locations'
+	SET @stProcessStamp = N'JP11_InventoryRecallAsrs'
+	SET @stUserName = N'ILSSRV'
+
+	EXEC HIST_SaveProcHist @stProcess
+	,@stAction
+	,@stIdentifier1
+	,@stIdentifier2
+	,@stIdentifier3
+	,@stIdentifier4
+	,@stMessage
+	,@stProcessStamp
+	,@stUserName
+	,@stWarehouse
+	,@cProcHistActive
+
+	SELECT N'No' AS N'Valid'
+	,N'Multiple from locations' AS N'ErrorMsg'
+	,N'N' AS N'InvokeAPI'
+	,N'N' AS N'LogAudit'
+
+	RETURN
+END
+
+ SELECT 
+  @FROM_LOC_NUM = INTERNAL_LOCATION_INV
+  ,@AV_QTY = (LI.ON_HAND_QTY - LI.ALLOCATED_QTY - LI.SUSPENSE_QTY)
+  ,@INV_STS = LI.INVENTORY_STS
+ FROM @LOC_INV LI 
+
+IF @FROM_LOC_NUM IS NULL 
+BEGIN
+	SET @stProcess = N'TGW_InventoryAdj'
+	SET @stAction = N'130' -- Execution Error
+	SET @stIdentifier1 = CONCAT(N'Item:',@item)
+	SET @stIdentifier2 = CONCAT(N'iMsgId: ',@iMsgId)
+	SET @stIdentifier3 = CONCAT(N'Gtin: ',@GTIN)
+	SET @stMessage =  N'From location is missing'
+	SET @stProcessStamp = N'JP11_InventoryRecallAsrs'
+	SET @stUserName = N'ILSSRV'
+
+	EXEC HIST_SaveProcHist @stProcess
+	,@stAction
+	,@stIdentifier1
+	,@stIdentifier2
+	,@stIdentifier3
+	,@stIdentifier4
+	,@stMessage
+	,@stProcessStamp
+	,@stUserName
+	,@stWarehouse
+	,@cProcHistActive
+
+	SELECT N'No' AS N'Valid'
+	,N'From location is missing' AS N'ErrorMsg'
+	,N'N' AS N'InvokeAPI'
+	,N'N' AS N'LogAudit'
+
+	RETURN
+END
+
+IF @QTY_CHANGED > @AV_QTY
+BEGIN
+	SET @stProcess = N'TGW_InventoryAdj'
+	SET @stAction = N'130' -- Execution Error
+	SET @stIdentifier1 = CONCAT(N'Item:',@item)
+	SET @stIdentifier2 = CONCAT(N'iMsgId: ',@iMsgId)
+	SET @stIdentifier3 = CONCAT(N'Gtin: ',@GTIN)
+	SET @stMessage =  N'Not enough AV QTY at from location'
+	SET @stProcessStamp = N'JP11_InventoryRecallAsrs'
+	SET @stUserName = N'ILSSRV'
+
+	EXEC HIST_SaveProcHist @stProcess
+	,@stAction
+	,@stIdentifier1
+	,@stIdentifier2
+	,@stIdentifier3
+	,@stIdentifier4
+	,@stMessage
+	,@stProcessStamp
+	,@stUserName
+	,@stWarehouse
+	,@cProcHistActive
+
+	SELECT N'No' AS N'Valid'
+	,N'Not enough AV QTY at from location' AS N'ErrorMsg'
+	,N'N' AS N'InvokeAPI'
+	,N'N' AS N'LogAudit'
+
+	RETURN
+END
+
+IF ISNULL(@INV_STS,N'N') != N'Available'
+BEGIN 
+	SET @stProcess = N'TGW_InventoryAdj'
+	SET @stAction = N'130' -- Execution Error
+	SET @stIdentifier1 = CONCAT(N'Item:',@item)
+	SET @stIdentifier2 = CONCAT(N'iMsgId: ',@iMsgId)
+	SET @stIdentifier3 = CONCAT(N'Gtin: ',@GTIN)
+	SET @stMessage =  N'From location inventory is not marked as Available'
+	SET @stProcessStamp = N'JP11_InventoryRecallAsrs'
+	SET @stUserName = N'ILSSRV'
+
+	EXEC HIST_SaveProcHist @stProcess
+	,@stAction
+	,@stIdentifier1
+	,@stIdentifier2
+	,@stIdentifier3
+	,@stIdentifier4
+	,@stMessage
+	,@stProcessStamp
+	,@stUserName
+	,@stWarehouse
+	,@cProcHistActive
+
+	SELECT N'No' AS N'Valid'
+	,N'From location inventory is not marked as Available' AS N'ErrorMsg'
+	,N'N' AS N'InvokeAPI'
+	,N'N' AS N'LogAudit'
+
+	RETURN
+END
+
+IF @TO_LOC IS NULL
+BEGIN 
+	SET @stProcess = N'TGW_InventoryAdj'
+	SET @stAction = N'130' -- Execution Error
+	SET @stIdentifier1 = CONCAT(N'Item:',@item)
+	SET @stIdentifier2 = CONCAT(N'iMsgId: ',@iMsgId)
+	SET @stIdentifier3 = CONCAT(N'Gtin: ',@GTIN)
+	SET @stMessage =  N'To location not assigned. Check technical value JP11_REASON_CODE'
+	SET @stProcessStamp = N'JP11_InventoryRecallAsrs'
+	SET @stUserName = N'ILSSRV'
+
+	EXEC HIST_SaveProcHist @stProcess
+	,@stAction
+	,@stIdentifier1
+	,@stIdentifier2
+	,@stIdentifier3
+	,@stIdentifier4
+	,@stMessage
+	,@stProcessStamp
+	,@stUserName
+	,@stWarehouse
+	,@cProcHistActive
+
+	SELECT N'No' AS N'Valid'
+	,N'To location not assigned' AS N'ErrorMsg'
+	,N'N' AS N'InvokeAPI'
+	,N'N' AS N'LogAudit'
+
+	RETURN
+END
+
+INSERT INTO @LOC_INV (INTERNAL_LOCATION_INV ,ITEM ,LOCATION ,USER_DEF2 ,USER_DEF4 ,LOCATION_TEMPLATE ,TEMPLATE_FIELD1 ,TEMPLATE_FIELD2 ,TEMPLATE_FIELD3 ,TEMPLATE_FIELD4,TEMPLATE_FIELD5 
+,INVENTORY_STS ,ON_HAND_QTY ,ALLOCATED_QTY ,SUSPENSE_QTY, LOGISTICS_UNIT)
+
+SELECT INTERNAL_LOCATION_INV ,ITEM ,LOCATION ,USER_DEF2 ,USER_DEF4 ,LOCATION_TEMPLATE ,TEMPLATE_FIELD1 ,TEMPLATE_FIELD2 ,TEMPLATE_FIELD3 ,TEMPLATE_FIELD4,TEMPLATE_FIELD5
+,INVENTORY_STS ,ON_HAND_QTY ,ALLOCATED_QTY ,SUSPENSE_QTY, LOGISTICS_UNIT
+FROM LOCATION_INVENTORY 
+WHERE LOCATION = @TO_LOC
+AND ITEM = @ITEM
+AND LOGISTICS_UNIT = @ITEM
+
+
+IF (SELECT COUNT(LI.LOCATION) FROM @LOC_INV LI WHERE LI.LOCATION = @TO_LOC AND LI.LOGISTICS_UNIT = @ITEM) > 1
+BEGIN 
+	SET @stProcess = N'TGW_InventoryAdj'
+	SET @stAction = N'130' -- Execution Error
+	SET @stIdentifier1 = CONCAT(N'Item:',@item)
+	SET @stIdentifier2 = CONCAT(N'iMsgId: ',@iMsgId)
+	SET @stIdentifier3 = CONCAT(N'Gtin: ',@GTIN)
+	SET @stMessage =  N'Multiple to location records'
+	SET @stProcessStamp = N'JP11_InventoryRecallAsrs'
+	SET @stUserName = N'ILSSRV'
+
+	EXEC HIST_SaveProcHist @stProcess
+	,@stAction
+	,@stIdentifier1
+	,@stIdentifier2
+	,@stIdentifier3
+	,@stIdentifier4
+	,@stMessage
+	,@stProcessStamp
+	,@stUserName
+	,@stWarehouse
+	,@cProcHistActive
+
+	SELECT N'No' AS N'Valid'
+	,N'Multiple to location recoreds' AS N'ErrorMsg'
+	,N'N' AS N'InvokeAPI'
+	,N'N' AS N'LogAudit'
+
+	RETURN
+END
+
+IF EXISTS (SELECT 1 FROM @LOC_INV LI WHERE LI.LOCATION = @TO_LOC AND LI.LOGISTICS_UNIT = @ITEM)
+BEGIN 
+	UPDATE LI SET --UPDATE THE ON HAND TO SUBTRACT THE TRANSFERED AMOUNT
+	LI.ON_HAND_QTY = (LI.ON_HAND_QTY - @QTY_CHANGED)
+	,LI.PROCESS_STAMP = 'JP11_InventoryRecallAsrs' 
+	,LI.DATE_TIME_STAMP = GETDATE()
+	FROM 
+	LOCATION_INVENTORY LI
+	WHERE LI.INTERNAL_LOCATION_INV = @FROM_LOC_NUM
+
+	UPDATE LI SET --UPDATE THE ON HAND TO ADD THE TRANSFERED AMOUNT
+	LI.ON_HAND_QTY = (LI.ON_HAND_QTY + @QTY_CHANGED)
+	,LI.PROCESS_STAMP = 'JP11_InventoryRecallAsrs'
+	,LI.DATE_TIME_STAMP = GETDATE()
+	FROM 
+	LOCATION_INVENTORY LI
+	WHERE LI.LOCATION = @TO_LOC
+	AND LI.ITEM = @ITEM
+	AND LI.LOGISTICS_UNIT = @ITEM
+END
+ELSE 
+BEGIN 
+
+	UPDATE LI SET --UPDATE THE ON HAND TO SUBTRACT THE TRANSFERED AMOUNT
+	LI.ON_HAND_QTY = (LI.ON_HAND_QTY - @QTY_CHANGED)
+	,LI.PROCESS_STAMP = 'JP11_InventoryRecallAsrs' 
+	,LI.DATE_TIME_STAMP = GETDATE()
+	FROM 
+	LOCATION_INVENTORY LI
+	WHERE LI.INTERNAL_LOCATION_INV = @FROM_LOC_NUM
+
+	INSERT INTO LOCATION_INVENTORY(
+	LOCATION_TEMPLATE ,TEMPLATE_FIELD1 ,TEMPLATE_FIELD2 ,TEMPLATE_FIELD3 ,TEMPLATE_FIELD4 ,TEMPLATE_FIELD5 ,ITEM ,PERMANENT ,ON_HAND_QTY ,QUANTITY_UM ,INVENTORY_STS ,AGING_DATE ,EXPIRATION_DATE ,RECEIVED_DATE ,TOTAL_VALUE ,TOTAL_COST
+	,TOTAL_WEIGHT ,TOTAL_VOLUME ,VOLUME_UM ,USER_STAMP ,PROCESS_STAMP ,DATE_TIME_STAMP ,WEIGHT_UM ,warehouse ,LOCATION ,ITEM_DESC,LOGISTICS_UNIT)
+
+	SELECT
+	LOCATION_TEMPLATE = L.LOCATION_TEMPLATE
+	,TEMPLATE_FIELD1 = L.TEMPLATE_FIELD1 
+	,TEMPLATE_FIELD2 = L.TEMPLATE_FIELD2 
+	,TEMPLATE_FIELD3 = L.TEMPLATE_FIELD3 
+	,TEMPLATE_FIELD4 = L.TEMPLATE_FIELD4 
+	,TEMPLATE_FIELD5 = L.TEMPLATE_FIELD5 
+	,ITEM = @ITEM
+	,PERMANENT = N'N'
+	,ON_HAND_QTY = @QTY_CHANGED
+	,QUANTITY_UM = N'EA'
+	,INVENTORY_STS = N'Available'
+	,AGING_DATE = N'2000-12-02 21:08:00.533'
+	,EXPIRATION_DATE = N'4712-12-31 00:00:00.000'
+	,RECEIVED_DATE = N'2000-12-02 21:08:00.533'
+	,TOTAL_VALUE = (I.COST * @QTY_CHANGED)
+	,TOTAL_COST = (I.COST * @QTY_CHANGED)
+	,TOTAL_WEIGHT = (@QTY_CHANGED / UOM.CONVERSION_QTY) * UOM.WEIGHT
+	,TOTAL_VOLUME = (@QTY_CHANGED / UOM.CONVERSION_QTY) * (UOM.LENGTH * UOM.WIDTH * UOM.HEIGHT)
+	,VOLUME_UM = N'IN3'
+	,USER_STAMP = N'ILSSRV'
+	,PROCESS_STAMP = N'JP11_InventoryRecallAsrs' 
+	,DATE_TIME_STAMP = GETDATE()
+	,WEIGHT_UM = N'LB'
+	,warehouse = L.warehouse
+	,LOCATION = @TO_LOC 
+	,ITEM_DESC =  I.DESCRIPTION
+	,LOGISTICS_UNIT = @ITEM
+	FROM ITEM_UNIT_OF_MEASURE UOM
+	INNER JOIN ITEM I ON I.ITEM = UOM.ITEM
+	INNER JOIN LOCATION L ON L.LOCATION = @TO_LOC
+	WHERE UOM.ITEM = @ITEM AND UOM.QUANTITY_UM = @QUANTITY_UM
+END
+
+UPDATE L SET 
+	L.LOCATION_STS = N'Storage'
+	FROM LOCATION L 
+	WHERE L.LOCATION = @TO_LOC
+	AND L.LOCATION_STS = N'Empty'
+
+	SET @stProcess = N'TGW_InventoryAdj'
+	SET @stAction = N'350' --Transfer
+	SET @stIdentifier1 = @iMsgId
+	SET @stIdentifier3 = @GTIN 
+	SET @stMessage =  CONCAT(@USER, N' moved ',@QTY_CHANGED,'EA of Item ',@ITEM,' from ',(SELECT LOCATION FROM @LOC_INV L WHERE L.INTERNAL_LOCATION_INV = @FROM_LOC_NUM),' to ',@TO_LOC)
+	SET @stProcessStamp = N'JP11_InventoryRecallAsrs'
+	SET @stUserName = N'ILSSRV'
+
+	EXEC HIST_SaveProcHist @stProcess
+	,@stAction
+	,@stIdentifier1
+	,@stIdentifier2
+	,@stIdentifier3
+	,@stIdentifier4
+	,@stMessage
+	,@stProcessStamp
+	,@stUserName
+	,@stWarehouse
+	,@cProcHistActive
+
+SET @PROCESS_HIST = (SELECT TOP 1 P.INTERNAL_ID FROM PROCESS_HISTORY P WHERE P.IDENTIFIER1 = CONVERT(NVARCHAR, @iMsgId))
+
+INSERT INTO TRANSACTION_HISTORY(--inserting the From loc trnasaction history 
+	warehouse,TRANSACTION_TYPE,USER_NAME,LOCATION,ITEM,QUANTITY,QUANTITY_UM,INTERNAL_KEY_ID,REFERENCE_LINE_NUM,REFERENCE_ID,BEFORE_IN_TRANSIT_QTY,BEFORE_ON_HAND_QTY,BEFORE_ALLOC_QTY,
+	BEFORE_SUSPENSE_QTY,AFTER_ON_HAND_QTY,AFTER_IN_TRANSIT_QTY,AFTER_ALLOC_QTY,AFTER_SUSPENSE_QTY,USER_DEF7,USER_DEF8,USER_STAMP,PROCESS_STAMP ,DATE_TIME_STAMP,REFERENCE_TYPE,WORK_ZONE, 
+	BEFORE_STS,AFTER_STS,ACTIVITY_DATE_TIME,DIRECTION,BEFORE_EXPIRATION_DATE, AFTER_EXPIRATION_DATE,TO_WAREHOUSE,INTERNAL_CONTAINER_NUM 
+)
+		  
+SELECT 
+	warehouse = N'02',
+	TRANSACTION_TYPE = 60,
+	USER_NAME = @USER,
+	LOCATION = LI.LOCATION, 
+	ITEM = @ITEM,
+	QUANTITY = @QTY_CHANGED,
+	QUANTITY_UM = N'EA',
+	INTERNAL_KEY_ID = 0,
+	REFERENCE_LINE_NUM = 0.00000,
+	REFERENCE_ID = @PROCESS_HIST,
+	BEFORE_IN_TRANSIT_QTY = LI.IN_TRANSIT_QTY,
+	BEFORE_ON_HAND_QTY = LI.ON_HAND_QTY + @QTY_CHANGED,
+	BEFORE_ALLOC_QTY = LI.ALLOCATED_QTY,
+	BEFORE_SUSPENSE_QTY = LI.SUSPENSE_QTY,
+	AFTER_ON_HAND_QTY = LI.ON_HAND_QTY,
+	AFTER_IN_TRANSIT_QTY = LI.IN_TRANSIT_QTY,
+	AFTER_ALLOC_QTY = LI.ALLOCATED_QTY,
+	AFTER_SUSPENSE_QTY = LI.SUSPENSE_QTY,
+	USER_DEF7 = 0.00000, 
+	USER_DEF8 = 0.00000,
+	USER_STAMP = @USER,
+	PROCESS_STAMP = N'JP11_InventoryRecallAsrs',
+	DATE_TIME_STAMP = GETUTCDATE(),
+	REFERENCE_TYPE = N'Move',
+	WORK_ZONE = N'W-AMHE', 
+	BEFORE_STS  = N'Available', 
+	AFTER_STS = N'Available',
+	ACTIVITY_DATE_TIME = GETUTCDATE(), 
+	DIRECTION = N'From', 
+	BEFORE_EXPIRATION_DATE = N'4712-12-31 00:00:00.000', 
+	AFTER_EXPIRATION_DATE = N'4712-12-31 00:00:00.000', 
+	TO_WAREHOUSE = N'02', 
+	INTERNAL_CONTAINER_NUM = 0
+FROM LOCATION_INVENTORY LI 
+WHERE LI.INTERNAL_LOCATION_INV = @FROM_LOC_NUM 
+
+INSERT INTO TRANSACTION_HISTORY(--inserting the To loc Transaction History 
+	warehouse,TRANSACTION_TYPE,USER_NAME,LOCATION,ITEM,QUANTITY,QUANTITY_UM,INTERNAL_KEY_ID,REFERENCE_LINE_NUM,REFERENCE_ID,BEFORE_IN_TRANSIT_QTY,BEFORE_ON_HAND_QTY,BEFORE_ALLOC_QTY,
+	BEFORE_SUSPENSE_QTY,AFTER_ON_HAND_QTY,AFTER_IN_TRANSIT_QTY,AFTER_ALLOC_QTY,AFTER_SUSPENSE_QTY,USER_DEF7,USER_DEF8,USER_STAMP,PROCESS_STAMP ,DATE_TIME_STAMP,REFERENCE_TYPE,WORK_ZONE, 
+	BEFORE_STS,AFTER_STS,ACTIVITY_DATE_TIME,DIRECTION,BEFORE_EXPIRATION_DATE, AFTER_EXPIRATION_DATE,TO_WAREHOUSE,INTERNAL_CONTAINER_NUM 
+)
+		  
+SELECT TOP 1
+	warehouse = N'02',
+	TRANSACTION_TYPE = 60,
+	USER_NAME = @USER,
+	LOCATION = LI.LOCATION, 
+	ITEM = @ITEM,
+	QUANTITY = @QTY_CHANGED,
+	QUANTITY_UM = N'EA',
+	INTERNAL_KEY_ID = 0,
+	REFERENCE_LINE_NUM = 0.00000,
+	REFERENCE_ID = @PROCESS_HIST,
+	BEFORE_IN_TRANSIT_QTY = LI.IN_TRANSIT_QTY,
+	BEFORE_ON_HAND_QTY = LI.ON_HAND_QTY - @QTY_CHANGED,
+	BEFORE_ALLOC_QTY = LI.ALLOCATED_QTY,
+	BEFORE_SUSPENSE_QTY = LI.SUSPENSE_QTY,
+	AFTER_ON_HAND_QTY = LI.ON_HAND_QTY,
+	AFTER_IN_TRANSIT_QTY = LI.IN_TRANSIT_QTY,
+	AFTER_ALLOC_QTY = LI.ALLOCATED_QTY,
+	AFTER_SUSPENSE_QTY = LI.SUSPENSE_QTY,
+	USER_DEF7 = 0.00000, 
+	USER_DEF8 = 0.00000,
+	USER_STAMP = @USER,
+	PROCESS_STAMP = N'JP11_InventoryRecallAsrs',
+	DATE_TIME_STAMP = GETUTCDATE(),
+	REFERENCE_TYPE = N'Move',
+	WORK_ZONE = N'W-P&D', 
+	BEFORE_STS  = N'Available', 
+	AFTER_STS = N'Available',
+	ACTIVITY_DATE_TIME = GETUTCDATE(), 
+	DIRECTION = N'To', 
+	BEFORE_EXPIRATION_DATE = N'4712-12-31 00:00:00.000', 
+	AFTER_EXPIRATION_DATE = N'4712-12-31 00:00:00.000', 
+	TO_WAREHOUSE = N'02', 
+	INTERNAL_CONTAINER_NUM = 0
+FROM LOCATION_INVENTORY LI 
+WHERE LI.LOCATION = @TO_LOC AND LI.LOGISTICS_UNIT = @ITEM
+
+	SELECT N'No' AS N'Valid'
+	,N'Inventory moved' AS N'ErrorMsg'
+	,N'N' AS N'InvokeAPI'
+	,N'N' AS N'LogAudit'		
